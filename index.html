@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>デジライズAIスクール コースマップ</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#FAF7F2;--card:#FFFFFF;--text:#1A1A1A;--sub:#6B6560;--border:#E8E2DA}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -67,6 +67,6 @@ function progressColor(p){if(p===100)return'#34A853';if(p>0)return'#F5A623';retu
 function renderCourses(){const grid=document.getElementById('coursesGrid'),filtered=activeFilter==='すべて'?courses:courses.filter(c=>c.cat===activeFilter);if(activeFilter==='すべて'){let html='';catOrder.forEach(cat=>{const cc=filtered.filter(c=>c.cat===cat);if(!cc.length)return;html+='<div class="category-header"><h2><span class="dot" style="background:'+CAT_COLORS[cat]+';width:10px;height:10px;border-radius:50%;display:inline-block"></span>'+cat+'<span class="count">'+cc.length+'コース</span></h2><div class="cat-line"></div></div>';cc.forEach(c=>html+=courseCard(c))});grid.innerHTML=html}else{grid.innerHTML=filtered.map(c=>courseCard(c)).join('')}}
 function courseCard(c){const bc=['初級','中級','上級','総合'].includes(c.level)?'badge-'+c.level:'badge-その他',sl=c.progress===100?'完了':c.progress>0?'進行中':'未開始';return '<div class="course-card"><div class="course-top"><span class="course-name">'+c.name+'</span><span class="course-badge '+bc+'">'+c.level+'</span></div><div class="course-meta"><span class="cat-dot" style="background:'+CAT_COLORS[c.cat]+'"></span><span>'+c.cat+'</span><span>·</span><span>'+c.lessons+'レッスン</span><span>·</span><span style="color:'+progressColor(c.progress)+';font-weight:700">'+sl+'</span></div><div class="progress-row"><div class="progress-bar"><div class="progress-fill" style="width:'+c.progress+'%;background:'+progressColor(c.progress)+'"></div></div><span class="progress-pct" style="color:'+progressColor(c.progress)+'">'+c.progress+'%</span></div></div>'}
 renderFilters();renderCourses();
-<\/script>
+</script>
 </body>
 </html>
