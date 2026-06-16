@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デジライズAIスクール コースマップ</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"><\/script>
+<style>
+:root{--bg:#FAF7F2;--card:#FFFFFF;--text:#1A1A1A;--sub:#6B6560;--border:#E8E2DA}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.header{padding:48px 40px 32px;max-width:1200px;margin:0 auto}
+.header h1{font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px}
+.header p{color:var(--sub);font-size:14px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1200px;margin:0 auto 32px;padding:0 40px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.stat-card .label{font-size:12px;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.stat-card .value{font-size:32px;font-weight:800;letter-spacing:-1px}
+.stat-card .detail{font-size:12px;color:var(--sub);margin-top:2px}
+.charts-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1200px;margin:0 auto 32px;padding:0 40px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+.chart-card h3{font-size:14px;font-weight:700;margin-bottom:16px}
+.chart-wrapper{position:relative;width:100%;height:clamp(200px,30vh,300px);overflow:hidden}
+.filter-bar{max-width:1200px;margin:0 auto 20px;padding:0 40px;display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{border:1px solid var(--border);background:var(--card);border-radius:100px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;color:var(--text)}
+.filter-btn:hover{border-color:var(--text)}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+.filter-btn .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.courses-grid{max-width:1200px;margin:0 auto;padding:0 40px 80px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.course-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:10px;transition:transform 0.15s,box-shadow 0.15s}
+.course-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.06)}
+.course-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.course-name{font-size:14px;font-weight:700;flex:1;line-height:1.4}
+.course-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.badge-初級{background:#E8F5E9;color:#2E7D32}.badge-中級{background:#E3F2FD;color:#1565C0}.badge-上級{background:#FFF3E0;color:#E65100}.badge-総合{background:#F3E5F5;color:#6A1B9A}.badge-その他{background:#F5F5F5;color:#616161}
+.course-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--sub)}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.progress-row{display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:6px;background:#EDEBE8;border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
+.progress-pct{font-size:12px;font-weight:700;width:38px;text-align:right;flex-shrink:0}
+.category-header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:24px 0 4px}
+.category-header .cat-line{flex:1;height:1px;background:var(--border)}
+.category-header h2{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.category-header .count{font-size:12px;font-weight:600;color:var(--sub);background:#F0EDE8;padding:2px 10px;border-radius:100px}
+@media(max-width:800px){.stats-row{grid-template-columns:repeat(2,1fr)}.charts-section{grid-template-columns:1fr}.courses-grid{grid-template-columns:1fr}.header,.stats-row,.charts-section,.filter-bar,.courses-grid{padding-left:20px;padding-right:20px}}
+</style>
+</head>
+<body>
+<div class="header"><h1>デジライズAIスクール コースマップ</h1><p>全61コース・カテゴリ別の学習進捗ダッシュボード</p></div>
+<div class="stats-row" id="statsRow"></div>
+<div class="charts-section"><div class="chart-card"><h3>カテゴリ別コース数</h3><div class="chart-wrapper"><canvas id="catChart"></canvas></div></div><div class="chart-card"><h3>レベル別の進捗率</h3><div class="chart-wrapper"><canvas id="levelChart"></canvas></div></div></div>
+<div class="filter-bar" id="filterBar"></div>
+<div class="courses-grid" id="coursesGrid"></div>
+<script>
+const CAT_COLORS={'スクールガイド':'#A0896E','生成AI総合':'#34A853','ChatGPT':'#10A37F','Gemini':'#4285F4','Copilot':'#7B61FF','Claude':'#D4583A','Claude Code':'#E8834A','Codex':'#2D9CDB','その他':'#8E8E93'};
+const courses=[{cat:'スクールガイド',name:'デジライズAIスクールの使い方',level:'その他',lessons:1,progress:0},{cat:'生成AI総合',name:'基礎教養編',level:'総合',lessons:5,progress:100},{cat:'生成AI総合',name:'ツール実践編',level:'総合',lessons:2,progress:100},{cat:'生成AI総合',name:'応用・戦略編',level:'総合',lessons:2,progress:100},{cat:'ChatGPT',name:'ChatGPT基礎',level:'初級',lessons:5,progress:63},{cat:'ChatGPT',name:'ChatGPTプロンプト活用',level:'初級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPT文書作成入門',level:'初級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPTビジュアル制作',level:'中級',lessons:4,progress:0},{cat:'ChatGPT',name:'ChatGPTデータ活用',level:'中級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPTリサーチ実践',level:'中級',lessons:2,progress:0},{cat:'ChatGPT',name:'ChatGPT業務自動化',level:'上級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPTプロジェクト管理',level:'上級',lessons:1,progress:0},{cat:'ChatGPT',name:'チャットボットGPTs活用',level:'上級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPTパーソナライズ',level:'上級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPT組織展開',level:'上級',lessons:1,progress:0},{cat:'ChatGPT',name:'ChatGPT実践活用',level:'上級',lessons:2,progress:0},{cat:'Gemini',name:'Gemini基礎',level:'初級',lessons:4,progress:100},{cat:'Gemini',name:'Geminiプロンプト活用',level:'初級',lessons:1,progress:100},{cat:'Gemini',name:'Gemini文書作成入門',level:'初級',lessons:1,progress:100},{cat:'Gemini',name:'Geminiビジュアル制作',level:'中級',lessons:3,progress:100},{cat:'Gemini',name:'Geminiデータ活用',level:'中級',lessons:1,progress:100},{cat:'Gemini',name:'Geminiリサーチ実践',level:'中級',lessons:2,progress:100},{cat:'Gemini',name:'Gemini Workspace連携',level:'中級',lessons:6,progress:100},{cat:'Gemini',name:'チャットボットGems活用',level:'上級',lessons:1,progress:100},{cat:'Gemini',name:'Gemini業務自動化',level:'上級',lessons:2,progress:100},{cat:'Gemini',name:'NotebookLM活用',level:'上級',lessons:1,progress:100},{cat:'Gemini',name:'Google AI Studio活用',level:'上級',lessons:3,progress:100},{cat:'Gemini',name:'Gemini実践活用',level:'上級',lessons:1,progress:100},{cat:'Copilot',name:'Copilot基礎',level:'初級',lessons:3,progress:0},{cat:'Copilot',name:'Copilotプロンプト活用',level:'初級',lessons:1,progress:0},{cat:'Copilot',name:'Copilot文書作成入門',level:'初級',lessons:1,progress:0},{cat:'Copilot',name:'Copilotビジュアル制作',level:'中級',lessons:1,progress:0},{cat:'Copilot',name:'Copilotデータ活用',level:'中級',lessons:1,progress:0},{cat:'Copilot',name:'Copilotリサーチ実践',level:'中級',lessons:1,progress:0},{cat:'Copilot',name:'Copilot M365連携',level:'中級',lessons:7,progress:0},{cat:'Copilot',name:'Copilotノートブック活用',level:'上級',lessons:1,progress:0},{cat:'Copilot',name:'Copilotエージェント活用',level:'上級',lessons:1,progress:0},{cat:'Copilot',name:'Copilot Studio活用',level:'上級',lessons:1,progress:0},{cat:'Claude',name:'Claudeの全体像を掴む',level:'初級',lessons:5,progress:60},{cat:'Claude',name:'Claude固有機能を使いこなす',level:'中級',lessons:8,progress:100},{cat:'Claude',name:'Claude実務デモ集',level:'中級',lessons:3,progress:100},{cat:'Claude',name:'Claude Coworkの基本',level:'中級',lessons:5,progress:100},{cat:'Claude',name:'Coworkの拡張機能',level:'上級',lessons:1,progress:100},{cat:'Claude',name:'Cowork実務デモ集',level:'上級',lessons:3,progress:67},{cat:'Claude Code',name:'コースを進める前の事前学習',level:'初級',lessons:1,progress:0},{cat:'Claude Code',name:'座学パート',level:'初級',lessons:4,progress:25},{cat:'Claude Code',name:'ワークパート',level:'中級',lessons:4,progress:0},{cat:'Claude Code',name:'セキュリティ・Q&A',level:'その他',lessons:1,progress:0},{cat:'Claude Code',name:'Claude Code導入と初動',level:'初級',lessons:4,progress:100},{cat:'Claude Code',name:'コマンドと日常操作',level:'中級',lessons:4,progress:75},{cat:'Claude Code',name:'コンテキストと文脈設計',level:'中級',lessons:7,progress:86},{cat:'Claude Code',name:'Skills・Hooks・拡張機能',level:'上級',lessons:3,progress:67},{cat:'Claude Code',name:'マルチエージェントと自動化',level:'上級',lessons:2,progress:100},{cat:'Claude Code',name:'Claude Code業務デモ集',level:'上級',lessons:3,progress:33},{cat:'Claude Code',name:'最新活用アーカイブ',level:'その他',lessons:1,progress:10},{cat:'Codex',name:'Codex基礎編',level:'初級',lessons:1,progress:100},{cat:'その他',name:'Weekly AI勉強会',level:'その他',lessons:1,progress:0},{cat:'その他',name:'Claude Code勉強会',level:'その他',lessons:2,progress:0},{cat:'その他',name:'限定ウェビナー',level:'その他',lessons:2,progress:0},{cat:'その他',name:'AI時代を生き抜くキャリアアップ術',level:'その他',lessons:3,progress:0},{cat:'その他',name:'コラボイベント',level:'その他',lessons:1,progress:0}];
+const total=courses.length,completed=courses.filter(c=>c.progress===100).length,inProgress=courses.filter(c=>c.progress>0&&c.progress<100).length,avgProgress=Math.round(courses.reduce((s,c)=>s+c.progress,0)/total);
+document.getElementById('statsRow').innerHTML=[{label:'全コース',value:total,detail:'9カテゴリ'},{label:'完了',value:completed,detail:Math.round(completed/total*100)+'% of total'},{label:'進行中',value:inProgress,detail:'一部完了'},{label:'平均進捗',value:avgProgress+'%',detail:'全コース平均'}].map(s=>'<div class="stat-card"><div class="label">'+s.label+'</div><div class="value">'+s.value+'</div><div class="detail">'+s.detail+'</div></div>').join('');
+const catCounts={},catOrder=['スクールガイド','生成AI総合','ChatGPT','Gemini','Copilot','Claude','Claude Code','Codex','その他'];catOrder.forEach(c=>catCounts[c]=0);courses.forEach(c=>catCounts[c.cat]++);
+new Chart(document.getElementById('catChart'),{type:'doughnut',data:{labels:catOrder,datasets:[{data:catOrder.map(c=>catCounts[c]),backgroundColor:catOrder.map(c=>CAT_COLORS[c]),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{font:{size:12,weight:'600'},padding:10,usePointStyle:true,pointStyleWidth:10}}}}});
+const levels=['初級','中級','上級','総合','その他'],levelData=levels.map(lv=>{const lc=courses.filter(c=>c.level===lv);return{lv,done:lc.filter(c=>c.progress===100).length,partial:lc.filter(c=>c.progress>0&&c.progress<100).length,notStarted:lc.filter(c=>c.progress===0).length}});
+new Chart(document.getElementById('levelChart'),{type:'bar',data:{labels:levelData.map(d=>d.lv),datasets:[{label:'完了',data:levelData.map(d=>d.done),backgroundColor:'#34A853',borderRadius:4},{label:'進行中',data:levelData.map(d=>d.partial),backgroundColor:'#F5A623',borderRadius:4},{label:'未開始',data:levelData.map(d=>d.notStarted),backgroundColor:'#D1CCC5',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:12,weight:'600'}}},y:{stacked:true,grid:{color:'#F0EDE8'},ticks:{stepSize:5}}},plugins:{legend:{position:'top',align:'end',labels:{font:{size:11,weight:'600'},usePointStyle:true,pointStyleWidth:10,padding:14}}}}});
+let activeFilter='すべて';const filterBar=document.getElementById('filterBar'),allFilters=['すべて',...catOrder];
+function renderFilters(){filterBar.innerHTML=allFilters.map(f=>{const dot=f!=='すべて'?'<span class="dot" style="background:'+CAT_COLORS[f]+'"></span>':'';return '<button class="filter-btn '+(f===activeFilter?'active':'')+'" data-filter="'+f+'">'+dot+f+'</button>'}).join('');filterBar.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',()=>{activeFilter=btn.dataset.filter;renderFilters();renderCourses()})})}
+function progressColor(p){if(p===100)return'#34A853';if(p>0)return'#F5A623';return'#D1CCC5'}
+function renderCourses(){const grid=document.getElementById('coursesGrid'),filtered=activeFilter==='すべて'?courses:courses.filter(c=>c.cat===activeFilter);if(activeFilter==='すべて'){let html='';catOrder.forEach(cat=>{const cc=filtered.filter(c=>c.cat===cat);if(!cc.length)return;html+='<div class="category-header"><h2><span class="dot" style="background:'+CAT_COLORS[cat]+';width:10px;height:10px;border-radius:50%;display:inline-block"></span>'+cat+'<span class="count">'+cc.length+'コース</span></h2><div class="cat-line"></div></div>';cc.forEach(c=>html+=courseCard(c))});grid.innerHTML=html}else{grid.innerHTML=filtered.map(c=>courseCard(c)).join('')}}
+function courseCard(c){const bc=['初級','中級','上級','総合'].includes(c.level)?'badge-'+c.level:'badge-その他',sl=c.progress===100?'完了':c.progress>0?'進行中':'未開始';return '<div class="course-card"><div class="course-top"><span class="course-name">'+c.name+'</span><span class="course-badge '+bc+'">'+c.level+'</span></div><div class="course-meta"><span class="cat-dot" style="background:'+CAT_COLORS[c.cat]+'"></span><span>'+c.cat+'</span><span>·</span><span>'+c.lessons+'レッスン</span><span>·</span><span style="color:'+progressColor(c.progress)+';font-weight:700">'+sl+'</span></div><div class="progress-row"><div class="progress-bar"><div class="progress-fill" style="width:'+c.progress+'%;background:'+progressColor(c.progress)+'"></div></div><span class="progress-pct" style="color:'+progressColor(c.progress)+'">'+c.progress+'%</span></div></div>'}
+renderFilters();renderCourses();
+<\/script>
+</body>
+</html>
